@@ -73,7 +73,7 @@
     [mailer addAttachmentData:UIImagePNGRepresentation(self.shareView.params[@"image"]) mimeType:@"image/jpeg" fileName:@"SoL_Photo"];
     [mailer setMessageBody:self.shareView.params[@"email_body"] isHTML:NO];
     [mailer setSubject:self.shareView.params[@"subject"]];
-    [self.shareView.parentViewController presentModalViewController:mailer animated:YES];
+    [self.shareView.parentViewController presentViewController:mailer animated:YES completion:nil];
   }
   else {
     [SIAlertView presentErrorWithMessage:@"Cannot access Mail app from your device!"];
@@ -155,7 +155,19 @@
 }
 
 - (void)shareToTwitter {
-  
+  if ([TWTweetComposeViewController canSendTweet]) {
+    TWTweetComposeViewController *tweetComposer = [[TWTweetComposeViewController alloc] init];
+    [tweetComposer setInitialText:self.shareView.params[@"message"]];
+    [tweetComposer addImage:self.shareView.params[@"image"]];
+    [tweetComposer addURL:self.shareView.params[@"image_url"]];
+    [self.shareView.parentViewController presentViewController:tweetComposer animated:YES completion:nil];
+    [tweetComposer setCompletionHandler:^(SLComposeViewControllerResult result) {
+      [self.shareView.parentViewController dismissModalViewControllerAnimated:YES];
+    }];
+  }
+  else {
+    [SIAlertView presentErrorWithMessage:@"Please sign into Twitter on your device's settings"];
+  }
 }
 
 //#pragma mark - GoogleDrive

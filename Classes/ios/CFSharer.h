@@ -9,7 +9,10 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
+
 #import <MessageUI/MessageUI.h>
+#import <Twitter/Twitter.h>
+
 #import "Facebook.h"
 
 @class CFShareCircleView;
