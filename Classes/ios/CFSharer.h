@@ -12,6 +12,8 @@
 
 #import <MessageUI/MessageUI.h>
 #import <Twitter/Twitter.h>
+#import "Pinterest.h"
+#import "MGInstagram.h"
 
 #import "Facebook.h"
 

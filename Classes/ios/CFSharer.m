@@ -11,6 +11,8 @@
 #import "SIAlertView.h"
 #import "CFShareCircleView.h"
 
+#define kPinterestClientId @"XXXXXX"
+
 @implementation CFSharer
 
 @synthesize type = _type;
@@ -31,7 +33,7 @@
 #pragma mark - Methods
 - (void)share {
   if (_type == CFSharerTypeInstagram) {
-    NSLog(@"Instagram!");
+    [self shareToInstagram];
   }
   else if (_type == CFSharerTypeMail) {
     [self shareToMail];
@@ -43,12 +45,10 @@
     [self shareToFacebook];
   }
   else if (_type == CFSharerTypePinterest) {
-    NSLog(@"Pinterest!");
-    
+    [self shareToPinterest];
   }
   else if (_type == CFSharerTypeTwitter) {
-    NSLog(@"Twitter!");
-    
+    [self shareToTwitter];
   }
 }
 
@@ -58,7 +58,12 @@
 }
 
 - (void)shareToInstagram {
-  
+  if ([MGInstagram isAppInstalled]) {
+    [MGInstagram postImage:self.shareView.params[@"image"] withCaption:self.shareView.params[@"full_caption"] inView:self.shareView.parentViewController.view];
+  }
+  else {
+    [SIAlertView presentErrorWithMessage:@"Please install the Instagram app"];
+  }
 }
 
 #pragma mark - Instagram
@@ -71,12 +76,12 @@
     MFMailComposeViewController *mailer = [[MFMailComposeViewController alloc] init];
     mailer.mailComposeDelegate = self;
     [mailer addAttachmentData:UIImagePNGRepresentation(self.shareView.params[@"image"]) mimeType:@"image/jpeg" fileName:@"SoL_Photo"];
-    [mailer setMessageBody:self.shareView.params[@"email_body"] isHTML:NO];
+    [mailer setMessageBody:self.shareView.params[@"full_caption"] isHTML:NO];
     [mailer setSubject:self.shareView.params[@"subject"]];
     [self.shareView.parentViewController presentViewController:mailer animated:YES completion:nil];
   }
   else {
-    [SIAlertView presentErrorWithMessage:@"Cannot access Mail app from your device!"];
+    [SIAlertView presentErrorWithMessage:@"Cannot access Mail app from your device"];
   }
 }
 
@@ -146,7 +151,8 @@
 }
 
 - (void)shareToPinterest {
-  
+  Pinterest *_pinterest = [[Pinterest alloc] initWithClientId:kPinterestClientId];
+  [_pinterest createPinWithImageURL:self.shareView.params[@"image_url"] sourceURL:self.shareView.params[@"source_url"] description:self.shareView.params[@"caption"]];
 }
 
 #pragma mark - Twitter
@@ -159,10 +165,12 @@
     TWTweetComposeViewController *tweetComposer = [[TWTweetComposeViewController alloc] init];
     [tweetComposer setInitialText:self.shareView.params[@"message"]];
     [tweetComposer addImage:self.shareView.params[@"image"]];
-    [tweetComposer addURL:self.shareView.params[@"image_url"]];
     [self.shareView.parentViewController presentViewController:tweetComposer animated:YES completion:nil];
     [tweetComposer setCompletionHandler:^(SLComposeViewControllerResult result) {
       [self.shareView.parentViewController dismissModalViewControllerAnimated:YES];
+      if (result == SLComposeViewControllerResultDone) {
+        [SVProgressHUD showSuccessWithStatus:@"Shared!"];
+      }
     }];
   }
   else {
