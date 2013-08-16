@@ -44,9 +44,9 @@
   else if (_type == CFSharerTypeFacebook) {
     [self shareToFacebook];
   }
-  else if (_type == CFSharerTypePinterest) {
-    [self shareToPinterest];
-  }
+//  else if (_type == CFSharerTypePinterest) {
+//    [self shareToPinterest];
+//  }
   else if (_type == CFSharerTypeTwitter) {
     [self shareToTwitter];
   }
@@ -144,16 +144,16 @@
     }];
   }
 }
-
-#pragma mark - Pinterest
-+ (CFSharer *)pinterest {
-  return [[CFSharer alloc] initWithName:@"Pinterest" imageName:@"pinterest.png" type:CFSharerTypePinterest];
-}
-
-- (void)shareToPinterest {
-  Pinterest *_pinterest = [[Pinterest alloc] initWithClientId:kPinterestClientId];
-  [_pinterest createPinWithImageURL:self.shareView.params[@"image_url"] sourceURL:self.shareView.params[@"source_url"] description:self.shareView.params[@"caption"]];
-}
+//
+//#pragma mark - Pinterest
+//+ (CFSharer *)pinterest {
+//  return [[CFSharer alloc] initWithName:@"Pinterest" imageName:@"pinterest.png" type:CFSharerTypePinterest];
+//}
+//
+//- (void)shareToPinterest {
+//  Pinterest *_pinterest = [[Pinterest alloc] initWithClientId:kPinterestClientId];
+//  [_pinterest createPinWithImageURL:self.shareView.params[@"image_url"] sourceURL:self.shareView.params[@"source_url"] description:self.shareView.params[@"caption"]];
+//}
 
 #pragma mark - Twitter
 + (CFSharer *)twitter {
