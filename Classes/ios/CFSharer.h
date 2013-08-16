@@ -12,7 +12,7 @@
 
 #import <MessageUI/MessageUI.h>
 #import <Twitter/Twitter.h>
-#import "Pinterest.h"
+//#import "Pinterest.h"
 #import "MGInstagram.h"
 
 #import "Facebook.h"
@@ -26,7 +26,7 @@ typedef enum {
   CFSharerTypeMail,
   CFSharerTypeSave,
   CFSharerTypeFacebook,
-  CFSharerTypePinterest,
+//  CFSharerTypePinterest,
   CFSharerTypeTwitter,
   CFSharerTypeMore
 } CFSharerType;
@@ -50,8 +50,8 @@ typedef void (^FacebookCompletionBlock)(NSError *error, NSDictionary *results, F
 + (CFSharer *)mail;
 + (CFSharer *)save;
 + (CFSharer *)facebook;
-+ (CFSharer *)pinterest;
 + (CFSharer *)twitter;
+//+ (CFSharer *)pinterest;
 //+ (CFSharer *)googleDrive;
 //+ (CFSharer *)dropbox;
 //+ (CFSharer *)evernote;
