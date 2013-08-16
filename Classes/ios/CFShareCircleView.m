@@ -40,7 +40,7 @@
 @synthesize delegate = _delegate;
 
 - (id)initWithFrame:(CGRect)frame {
-  return [self initWithFrame:frame sharers:@[[CFSharer save], [CFSharer mail], [CFSharer twitter], [CFSharer instagram], [CFSharer pinterest], [CFSharer facebook]]];
+  return [self initWithFrame:frame sharers:@[[CFSharer save], [CFSharer mail], [CFSharer twitter], [CFSharer instagram], [CFSharer facebook]]];
 }
 
 - (id)initWithFrame:(CGRect)frame sharers:(NSArray *)sharers {
