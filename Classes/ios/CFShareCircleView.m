@@ -26,9 +26,13 @@
   BOOL _dragging, _circleIsVisible, _sharingOptionsIsVisible;
   CALayer *_closeButtonLayer, *_overlayLayer;
   CAShapeLayer *_backgroundLayer, *_touchLayer;
-  CATextLayer *_introTextLayer, *_shareTitleLayer;
-  NSMutableArray *_sharers, *_sharerLayers;
+  CATextLayer *_introTextLayer, *_releaseToShareTextLayer;
+  NSMutableArray *_sharers, *_sharerLayers, *_sharerCircleLayers;
   UIView *_sharingOptionsView;
+  
+  NSMutableArray *_selectedSharerLayers, *_selectedSharerCircleLayers;
+  
+  NSInteger withinSharerFrame;
 }
 
 #define CIRCLE_SIZE 275
@@ -40,7 +44,7 @@
 @synthesize delegate = _delegate;
 
 - (id)initWithFrame:(CGRect)frame {
-  return [self initWithFrame:frame sharers:@[[CFSharer save], [CFSharer mail], [CFSharer twitter], [CFSharer instagram], [CFSharer facebook]]];
+  return [self initWithFrame:frame sharers:@[[CFSharer save], [CFSharer mail], [CFSharer twitter], [CFSharer pinterest], [CFSharer instagram], [CFSharer facebook]]];
 }
 
 - (id)initWithFrame:(CGRect)frame sharers:(NSArray *)sharers {
@@ -89,6 +93,11 @@
 - (void)setUpCircleLayers {
   // Set all the defaults for the share circle.
   _sharerLayers = [[NSMutableArray alloc] init];
+  _sharerCircleLayers = [[NSMutableArray alloc] init];
+  _selectedSharerLayers = [[NSMutableArray alloc] init];
+  _selectedSharerCircleLayers = [[NSMutableArray alloc] init];
+  withinSharerFrame = -1;
+  
   self.hidden = YES;
   self.backgroundColor = [UIColor clearColor];
   self.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
@@ -147,7 +156,23 @@
     imageLayer.shadowOpacity = 1.0;
     imageLayer.name = sharer.name;
     [_sharerLayers addObject:imageLayer];
-    [_backgroundLayer addSublayer:[_sharerLayers objectAtIndex:i]];
+    [_backgroundLayer addSublayer:imageLayer];
+    
+    //Circle image around sharer
+    CAShapeLayer *imageCircleLayer = [CAShapeLayer layer];
+    imageCircleLayer.frame = CGRectMake(0, 0, TOUCH_SIZE, TOUCH_SIZE);
+    CGMutablePathRef circularPath = CGPathCreateMutable();
+    CGPathAddEllipseInRect(circularPath, NULL, CGRectMake(0, 0, TOUCH_SIZE, TOUCH_SIZE));
+    imageCircleLayer.path = circularPath;
+    CGPathRelease(circularPath);
+    imageCircleLayer.position = CGPointMake(CGRectGetMidX(_backgroundLayer.bounds), CGRectGetMidY(_backgroundLayer.bounds));
+    imageCircleLayer.opacity = 0.0;
+    imageCircleLayer.fillColor = [UIColor clearColor].CGColor;
+    imageCircleLayer.strokeColor = [UIColor blackColor].CGColor;
+    imageCircleLayer.lineWidth = 2.0f;
+    imageCircleLayer.position = imageLayer.position;
+    [_sharerCircleLayers addObject:imageCircleLayer];
+    [_backgroundLayer addSublayer:[_sharerCircleLayers objectAtIndex:i]];
   }
   
   // Create the touch layer for the Share Circle.
@@ -178,19 +203,20 @@
   _introTextLayer.opacity = 0.0;
   [_backgroundLayer addSublayer:_introTextLayer];
   
-  // Create the share title text layer.
-  _shareTitleLayer = [CATextLayer layer];
-  _shareTitleLayer.string = @"";
-  _shareTitleLayer.wrapped = YES;
-  _shareTitleLayer.alignmentMode = kCAAlignmentCenter;
-  _shareTitleLayer.fontSize = 20.0;
-  _shareTitleLayer.font = font;
-  _shareTitleLayer.foregroundColor = [[UIColor blackColor] CGColor];
-  _shareTitleLayer.frame = CGRectMake(0, 0, 120, 28);
-  _shareTitleLayer.position = CGPointMake(CGRectGetMidX(_backgroundLayer.bounds), CGRectGetMidY(_backgroundLayer.bounds));
-  _shareTitleLayer.contentsScale = [[UIScreen mainScreen] scale];
-  _shareTitleLayer.opacity = 0.0;
-  [_backgroundLayer addSublayer:_shareTitleLayer];
+  // Create the release to refresh text layer to help the user.
+  _releaseToShareTextLayer = [CATextLayer layer];
+  _releaseToShareTextLayer.string = @"Release to\nShare";
+  _releaseToShareTextLayer.wrapped = YES;
+  _releaseToShareTextLayer.alignmentMode = kCAAlignmentCenter;
+  _releaseToShareTextLayer.fontSize = 12.0;
+  _releaseToShareTextLayer.font = font;
+  _releaseToShareTextLayer.foregroundColor = [UIColor blackColor].CGColor;
+  _releaseToShareTextLayer.frame = CGRectMake(0, 0, 60, 31);
+  _releaseToShareTextLayer.position = CGPointMake(CGRectGetMidX(_backgroundLayer.bounds), CGRectGetMidY(_backgroundLayer.bounds));
+  _releaseToShareTextLayer.contentsScale = [[UIScreen mainScreen] scale];
+  _releaseToShareTextLayer.opacity = 0.0;
+  [_backgroundLayer addSublayer:_releaseToShareTextLayer];
+
   
   // Create the sharing options view if we need it.
   if(_sharers.count > MAX_VISIBLE_SHARERS)
@@ -271,27 +297,64 @@
       [CATransaction commit];
     }
     
-    CALayer *selectedSharerLayer = nil;
-    for(CALayer *layer in _sharerLayers) {
-      if(CGRectContainsPoint(layer.frame, _touchLayer.position)) {
-        selectedSharerLayer = layer;
-        break;
+    for(int i = 0; i < _sharerLayers.count; i++) {
+      CALayer *shareLayer = _sharerLayers[i];
+      CALayer *shareCircleLayer = _sharerCircleLayers[i];
+      
+      if(CGRectContainsPoint(shareLayer.frame, _touchLayer.position)) {
+        if (withinSharerFrame != i) {
+          if (![_selectedSharerCircleLayers containsObject:shareCircleLayer]) {
+            CFSharer *sharer = [_sharers objectAtIndex:[_sharerLayers indexOfObject:shareLayer]];
+            //Only allow instagram or pinterest...not both
+            if (sharer.type == CFSharerTypeInstagram || sharer.type == CFSharerTypePinterest) {
+              for (int i = 0; i < _selectedSharerLayers.count; i++) {
+                CALayer *otherShareLayer = _selectedSharerLayers[i];
+                CALayer *otherShareCircleLayer = _selectedSharerCircleLayers[i];
+                CFSharer *otherSharer = [_sharers objectAtIndex:[_sharerLayers indexOfObject:otherShareLayer]];
+                if (otherSharer.type == CFSharerTypeInstagram || otherSharer.type == CFSharerTypePinterest) {
+                  [_selectedSharerLayers removeObject:otherShareLayer];
+                  [_selectedSharerCircleLayers removeObject:otherShareCircleLayer];
+                }
+              }
+            }
+            
+            [_selectedSharerLayers addObject:shareLayer];
+            [_selectedSharerCircleLayers addObject:shareCircleLayer];
+          }
+          else {
+            [_selectedSharerLayers removeObject:shareLayer];
+            [_selectedSharerCircleLayers removeObject:shareCircleLayer];
+          }
+          withinSharerFrame = i;
+        }
+      }
+      else {
+        if (withinSharerFrame == i) {
+          withinSharerFrame = -1;
+        }
       }
     }
     
-    // Update the images.
-    for(int i = 0; i < [_sharerLayers count]; i++) {
-      CALayer *layer = [_sharerLayers objectAtIndex:i];
-      if(!_dragging || [selectedSharerLayer.name isEqualToString:layer.name])
+    for (CALayer *layer in _sharerLayers) {
+      if ([_selectedSharerLayers containsObject:layer]) {
         layer.opacity = 1.0;
-      else
+      }
+      else {
         layer.opacity = 0.6;
+      }
+    }
+    
+    for (CALayer *layer in _sharerCircleLayers) {
+      if ([_selectedSharerCircleLayers containsObject:layer]) {
+        layer.opacity = 1.0;
+      }
+      else {
+        layer.opacity = 0.0;
+      }
     }
     
     // Update the touch layer.
-    if(selectedSharerLayer)
-      _touchLayer.opacity = 1.0;
-    else if(_dragging)
+    if(_dragging)
       _touchLayer.opacity = 0.5;
     else
       _touchLayer.opacity = 0.1;
@@ -302,14 +365,10 @@
     else
       _introTextLayer.opacity = 0.6;
     
-    // Update the share title text layer
-    if(selectedSharerLayer) {
-      _shareTitleLayer.string = selectedSharerLayer.name;
-      _shareTitleLayer.opacity = 0.6;
-    } else {
-      _shareTitleLayer.opacity = 0.0;
-      _shareTitleLayer.string = @"";
-    }
+    if (_selectedSharerLayers.count > 0)
+      _releaseToShareTextLayer.opacity = 0.6;
+    else
+      _releaseToShareTextLayer.opacity = 0.0;
   }
   
   // Hide all the layers if the they are not presented to the user.
@@ -319,7 +378,6 @@
     _touchLayer.opacity = 0.0;
     _touchLayer.position = CGPointMake(CGRectGetMidX(_backgroundLayer.bounds), CGRectGetMidY(_backgroundLayer.bounds));
     _introTextLayer.opacity = 0.0;
-    _shareTitleLayer.opacity = 0.0;
     _currentPosition = _origin;
     _dragging = NO;
     // Update the images.
@@ -480,17 +538,50 @@
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
   UITouch *touch = (UITouch *)[[touches allObjects] objectAtIndex:0];
   _currentPosition = [touch locationInView:self];
-  CALayer *sharerLayer = [self sharerLayerBeingTouched];
   
-  if(_dragging && sharerLayer) {
-    if([sharerLayer.name isEqualToString:@"More"]) {
-      [self showMoreOptions];
-    } else {
-      CFSharer *sharer = [_sharers objectAtIndex:[_sharerLayers indexOfObject:sharerLayer]];
-      [sharer share];
-      [_delegate shareCircleView:self didSelectSharer:sharer];
+  if(_dragging && _selectedSharerLayers.count > 0) {
+    NSMutableArray *sharers = [NSMutableArray new];
+    for (CALayer *sharerLayer in _selectedSharerLayers) {
+      [sharers addObject:[_sharers objectAtIndex:[_sharerLayers indexOfObject:sharerLayer]]];
     }
-    [self hideCircle];
+    
+    for (int i = 0; i < sharers.count; i++) {
+      CFSharer *sharer = sharers[i];
+      if (sharer.type == CFSharerTypeFacebook || sharer.type == CFSharerTypeSave || sharer.type == CFSharerTypeTwitter) {
+        [sharer share:^{}];
+        [sharers removeObject:sharer];
+        i--;
+      }
+    }
+    
+    if (sharers.count == 0) {
+      [_delegate shareCircleView:self didSelectSharers:sharers];
+    }
+    else if (sharers.count == 1) {
+      CFSharer *sharer = sharers[0];
+      [sharer share:^{}];
+    }
+    else if (sharers.count == 2) {
+      CFSharer *sharer1 = sharers[0];
+      CFSharer *sharer2 = sharers[1];
+      
+      if (sharer1.type == CFSharerTypeMail) {
+        [sharer1 share:^{
+          [sharer2 share:^{
+            [_delegate shareCircleView:self didSelectSharers:sharers];
+          }];
+        }];
+      }
+      else {
+        [sharer2 share:^{
+          [sharer1 share:^{
+            [_delegate shareCircleView:self didSelectSharers:sharers];
+          }];
+        }];
+      }
+    }
+    
+    [self reset];
   } else {
     // Reset values.
     _currentPosition = _origin;
@@ -512,8 +603,8 @@
   [self hideMoreOptions];
   [tableView deselectRowAtIndexPath:indexPath animated:YES];
   CFSharer *sharer = [_sharers objectAtIndex:indexPath.row];
-  [sharer share];
-  [_delegate shareCircleView:self didSelectSharer:sharer];
+  [sharer share:^{}];
+  [_delegate shareCircleView:self didSelectSharers:@[sharer]];
 }
 
 #pragma mark -
@@ -566,6 +657,12 @@
 
 #pragma mark -
 #pragma mark - Public methods
+
+- (void)reset {
+  _selectedSharerLayers = [NSMutableArray new];
+  _selectedSharerCircleLayers = [NSMutableArray new];
+  [self hideCircle];
+}
 
 - (void)show {
   self.hidden = NO;
