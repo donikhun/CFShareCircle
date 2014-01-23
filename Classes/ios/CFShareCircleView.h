@@ -15,7 +15,8 @@
 
 @protocol CFShareCircleViewDelegate
 - (void)shareCircleDidCancel;
-- (void)shareCircleView:(CFShareCircleView *)aShareCircleView didSelectSharer:(CFSharer *)sharer;
+- (void)shareCircleView:(CFShareCircleView *)aShareCircleView didSelectSharers:(NSArray *)sharers;
+- (void)shareCircleView:(CFShareCircleView *)sharceCircleView didEncounterErrorMessage:(NSString *)errorMessage;
 @end
 
 @interface CFShareCircleView : UIView<UITableViewDelegate, UITableViewDataSource>
@@ -29,6 +30,11 @@
  Initialize the share circle with a custom list of sharers and custom photo and message for sharing.
  */
 - (id)initWithFrame:(CGRect)frame sharers:(NSArray *)sharers;
+
+/**
+ Resets circle
+ */
+- (void)reset;
 
 /**
  Animates the share circle into view.
