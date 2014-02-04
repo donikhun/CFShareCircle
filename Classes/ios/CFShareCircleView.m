@@ -191,10 +191,10 @@
   
   // Create the intro text layer to help the user.
   _introTextLayer = [CATextLayer layer];
-  _introTextLayer.string = @"Drag to\nShare";
+  _introTextLayer.string = @"Drag to\nMulti-Share";
   _introTextLayer.wrapped = YES;
   _introTextLayer.alignmentMode = kCAAlignmentCenter;
-  _introTextLayer.fontSize = 14.0;
+  _introTextLayer.fontSize = 12.0;
   _introTextLayer.font = font;
   _introTextLayer.foregroundColor = [UIColor blackColor].CGColor;
   _introTextLayer.frame = CGRectMake(0, 0, 60, 31);
@@ -545,43 +545,71 @@
       [sharers addObject:[_sharers objectAtIndex:[_sharerLayers indexOfObject:sharerLayer]]];
     }
     
+    CFSharer *finalSharer;
+    
     for (int i = 0; i < sharers.count; i++) {
       CFSharer *sharer = sharers[i];
-      if (sharer.type == CFSharerTypeFacebook || sharer.type == CFSharerTypeSave || sharer.type == CFSharerTypeTwitter) {
-        [sharer share:^{}];
-        [sharers removeObject:sharer];
+      if (sharer.type == CFSharerTypeInstagram || sharer.type == CFSharerTypePinterest) {
+        finalSharer = sharer;
+        [sharers removeObject:finalSharer];
         i--;
       }
     }
     
-    if (sharers.count == 0) {
-      [_delegate shareCircleView:self didSelectSharers:sharers];
-    }
-    else if (sharers.count == 1) {
-      CFSharer *sharer = sharers[0];
-      [sharer share:^{}];
-    }
-    else if (sharers.count == 2) {
-      CFSharer *sharer1 = sharers[0];
-      CFSharer *sharer2 = sharers[1];
-      
-      if (sharer1.type == CFSharerTypeMail) {
-        [sharer1 share:^{
-          [sharer2 share:^{
-            [_delegate shareCircleView:self didSelectSharers:sharers];
-          }];
-        }];
-      }
-      else {
-        [sharer2 share:^{
-          [sharer1 share:^{
-            [_delegate shareCircleView:self didSelectSharers:sharers];
-          }];
-        }];
-      }
-    }
+    //Not very clean..but does the trick
     
-    [self reset];
+    Block finishedBlock = ^{
+      [self reset];
+      [self.delegate shareCircleView:self didSelectSharers:sharers];
+      if (finalSharer) {
+        [finalSharer share:^{}];
+      }
+    };
+    
+    if (sharers.count > 0) {
+      [sharers[0] share:^{
+        if (sharers.count > 1) {
+          [sharers[1] share:^{
+            if (sharers.count > 2) {
+              [sharers[2] share:^{
+                if (sharers.count > 3) {
+                  [sharers[3] share:^{
+                    if (sharers.count > 4) {
+                      [sharers[1] share:^{
+                        if (sharers.count > 2) {
+                          if (finalSharer) {
+                            [finalSharer share:^{}];
+                          }
+                          finishedBlock();
+                        }
+                        else {
+                          finishedBlock();
+                        }
+                      }];
+                    }
+                    else {
+                      finishedBlock();
+                    }
+                  }];
+                }
+                else {
+                  finishedBlock();
+                }
+              }];
+            }
+            else {
+              finishedBlock();
+            }
+          }];
+        }
+        else {
+          finishedBlock();
+        }
+      }];
+    }
+    else {
+      finishedBlock();
+    }
   } else {
     // Reset values.
     _currentPosition = _origin;
