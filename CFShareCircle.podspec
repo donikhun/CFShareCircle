@@ -8,7 +8,7 @@
 #
 Pod::Spec.new do |s|
   s.name         = "CFShareCircle"
-  s.version      = "1.0.0.2"
+  s.version      = "1.0.0.1"
   s.summary      = "CFShareCircle is a user interface component for iOS that can be integrated into an app as a sharing mechanism for any kind of content."
   s.homepage     = "https://github.com/bfcrampton/CFShareCircle"
   s.license      = 'MIT'
@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
   s.platform     = :ios, '5.0'
   s.source_files = 'Classes', 'Classes/**/*.{h,m}'
   s.resources = "Resources/*"
-  s.dependency 'Facebook-iOS-SDK', '3.13.1'
+  s.dependency 'Facebook-iOS-SDK', '3.18.0'
   s.dependency 'Pinterest-iOS', '2.3'
   s.dependency 'MGInstagram', '0.0.1'
   s.frameworks = 'UIKit', 'QuartzCore', 'CoreGraphics', 'Twitter', 'Accounts', 'Social'
