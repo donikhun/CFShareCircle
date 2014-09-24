@@ -8,7 +8,7 @@
 #
 Pod::Spec.new do |s|
   s.name         = "CFShareCircle"
-  s.version      = "1.0.0.1"
+  s.version      = "1.0.0.2"
   s.summary      = "CFShareCircle is a user interface component for iOS that can be integrated into an app as a sharing mechanism for any kind of content."
   s.homepage     = "https://github.com/bfcrampton/CFShareCircle"
   s.license      = 'MIT'
