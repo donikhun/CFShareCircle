@@ -17,7 +17,6 @@ Pod::Spec.new do |s|
   s.platform     = :ios, '5.0'
   s.source_files = 'Classes', 'Classes/**/*.{h,m}'
   s.resources = "Resources/*"
-  s.dependency 'Facebook-iOS-SDK', '3.19.0'
   s.dependency 'Pinterest-iOS', '2.3'
   s.dependency 'MGInstagram', '0.0.1'
   s.frameworks = 'UIKit', 'QuartzCore', 'CoreGraphics', 'Twitter', 'Accounts', 'Social'
