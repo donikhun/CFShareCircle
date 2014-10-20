@@ -18,7 +18,7 @@
 #import "Pinterest.h"
 #import "MGInstagram.h"
 
-#import "Facebook.h"
+#import "FacebookSDK.h"
 
 @class CFShareCircleView;
 
